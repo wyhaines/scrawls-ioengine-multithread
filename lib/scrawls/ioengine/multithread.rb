@@ -14,10 +14,10 @@ module Scrawls
       end
 
       def do_main_loop server
-        while connection = server.accept
-          Thread.new do
+        while con = server.accept
+          Thread.new( con ) do |connection|
             Thread.current[:connection] = connection
-            request = get_request @connection
+            request = get_request connection
             response = handle request
 
             close
