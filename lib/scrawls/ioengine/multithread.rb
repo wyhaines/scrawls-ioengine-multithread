@@ -4,6 +4,7 @@ require 'socket'
 require 'mime-types'
 require 'scrawls/config/task'
 require 'scrawls/config/tasklist'
+require 'thread/pool'
 
 module Scrawls
   module Ioengine
@@ -15,9 +16,13 @@ module Scrawls
       end
 
       def run( config = {} )
-        super
+        server = TCPServer.new( config[:host], config[:port] )
 
-        create_thread_pool( config[:pool_size] )
+        fork_it( config[:processes] - 1 )
+
+        create_thread_pool( config[:thread_pool] )
+
+        do_main_loop server
       end
 
       def create_thread_pool( pool_size = nil )
@@ -50,6 +55,7 @@ module Scrawls
         call_list = SimpleRubyWebServer::Config::TaskList.new
 
         configuration[:thread_pool] = nil
+        configuration[:processes] = 1
 
         meta_configuration[:helptext] << <<-EHELP
 --processes COUNT:
@@ -73,8 +79,7 @@ EHELP
                 n = [ $1.to_i, $2.to_i > 0 ? $2.to_i : 1 ]
               else
                 n = Integer( size.to_i )
-                n = n > 0 ? [ n ]:w
-: nil
+                n = n > 0 ? [ n ] : nil
               end
 
               configuration[:thread_pool] = n
