@@ -46,7 +46,9 @@ module Scrawls
       def _do_main_loop connection
         Thread.current[:connection] = connection
         request = get_request connection
+        cork_tcp_socket connection
         response = handle request
+        uncork_tcp_socket connection
 
         close
       end
